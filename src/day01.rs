@@ -43,37 +43,20 @@ fn depths(report: &[String]) -> Vec<u32> {
 mod tests {
     use super::*;
 
+    const REPORT: [&str; 10] = [
+        "199", "200", "208", "210", "200", "207", "240", "269", "260", "263",
+    ];
+
     #[test]
     fn example1() {
-        let report = vec![
-            "199".to_string(),
-            "200".to_string(),
-            "208".to_string(),
-            "210".to_string(),
-            "200".to_string(),
-            "207".to_string(),
-            "240".to_string(),
-            "269".to_string(),
-            "260".to_string(),
-            "263".to_string(),
-        ];
-        assert_eq!(count_increases(&report), 7);
+        assert_eq!(count_increases(&REPORT.map(|s| s.to_string())), 7);
     }
 
     #[test]
     fn example2() {
-        let report = vec![
-            "199".to_string(),
-            "200".to_string(),
-            "208".to_string(),
-            "210".to_string(),
-            "200".to_string(),
-            "207".to_string(),
-            "240".to_string(),
-            "269".to_string(),
-            "260".to_string(),
-            "263".to_string(),
-        ];
-        assert_eq!(get_sliding_window_increases(&report), 5);
+        assert_eq!(
+            get_sliding_window_increases(&REPORT.map(|s| s.to_string())),
+            5
+        );
     }
 }
