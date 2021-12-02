@@ -62,7 +62,7 @@ fn parse_instruction(line: &str) -> Instruction {
 mod tests {
     use super::*;
 
-    const input: [&str; 6] = [
+    const INPUT: [&str; 6] = [
         "forward 5",
         "down 5",
         "forward 8",
@@ -73,11 +73,11 @@ mod tests {
 
     #[test]
     fn example1() {
-        assert_eq!(navigate(&input.map(|x| x.to_string())), (15, 10));
+        assert_eq!(navigate(&INPUT.map(|x| x.to_string())), (15, 10));
     }
 
     #[test]
     fn example2() {
-        assert_eq!(corrected(&input.map(|x| x.to_string())), (15, 60))
+        assert_eq!(corrected(&INPUT.map(|x| x.to_string())), (15, 60))
     }
 }
