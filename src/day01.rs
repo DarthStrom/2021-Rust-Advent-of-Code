@@ -3,29 +3,18 @@ use crate::input;
 pub fn run() {
     let contents = input::get_lines("day01");
 
-    let increases = count_increases(&contents);
-    println!("part1: {:?}", increases);
+    let single_increases = increases(&contents, 1);
+    println!("part1: {:?}", single_increases);
 
-    let sliding_window_increases = get_sliding_window_increases(&contents);
+    let sliding_window_increases = increases(&contents, 3);
     println!("part2: {:?}", sliding_window_increases);
 }
 
-fn count_increases(report: &[String]) -> u32 {
+fn increases(report: &[String], window: usize) -> u32 {
     let depths = depths(report);
     let mut result = 0;
     depths.iter().enumerate().for_each(|(i, &depth)| {
-        if i > 0 && depth > depths[i - 1] {
-            result += 1;
-        }
-    });
-    result
-}
-
-fn get_sliding_window_increases(report: &[String]) -> u32 {
-    let depths = depths(report);
-    let mut result = 0;
-    depths.iter().enumerate().for_each(|(i, &depth)| {
-        if i > 2 && depth > depths[i - 3] {
+        if i > window - 1 && depth > depths[i - window] {
             result += 1;
         }
     });
@@ -49,14 +38,11 @@ mod tests {
 
     #[test]
     fn example1() {
-        assert_eq!(count_increases(&REPORT.map(|s| s.to_string())), 7);
+        assert_eq!(increases(&REPORT.map(|s| s.to_string()), 1), 7);
     }
 
     #[test]
     fn example2() {
-        assert_eq!(
-            get_sliding_window_increases(&REPORT.map(|s| s.to_string())),
-            5
-        );
+        assert_eq!(increases(&REPORT.map(|s| s.to_string()), 3), 5);
     }
 }

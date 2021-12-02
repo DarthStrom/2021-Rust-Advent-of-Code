@@ -1,4 +1,5 @@
 mod day01;
+mod day02;
 mod input;
 
 fn main() {
@@ -10,6 +11,7 @@ fn main() {
             .expect("pick a day number");
         match day {
             1 => day01::run(),
+            2 => day02::run(),
             _ => println!("unimplemented day"),
         }
     } else {
