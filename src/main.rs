@@ -1,5 +1,6 @@
 mod day01;
 mod day02;
+mod day03;
 mod input;
 
 fn main() {
@@ -12,6 +13,7 @@ fn main() {
         match day {
             1 => day01::run(),
             2 => day02::run(),
+            3 => day03::run(),
             _ => println!("unimplemented day"),
         }
     } else {
