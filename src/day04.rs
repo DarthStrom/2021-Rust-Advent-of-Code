@@ -22,13 +22,12 @@ fn get_numbers(lines: &[String]) -> Vec<u32> {
 }
 
 fn get_boards(lines: &[String]) -> Vec<Vec<Vec<u32>>> {
-    let mut result = vec![];
-    let line_vecs = lines[2..]
+    lines[2..]
         .iter()
         .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>();
-    for chunk in line_vecs.chunks(5) {
-        result.push(
+        .collect::<Vec<_>>()
+        .chunks(5)
+        .map(|chunk| {
             chunk
                 .iter()
                 .map(|s| {
@@ -36,10 +35,9 @@ fn get_boards(lines: &[String]) -> Vec<Vec<Vec<u32>>> {
                         .map(|s| s.parse::<u32>().unwrap())
                         .collect::<Vec<_>>()
                 })
-                .collect::<Vec<_>>(),
-        )
-    }
-    result
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
 }
 
 #[derive(Clone, Debug)]
