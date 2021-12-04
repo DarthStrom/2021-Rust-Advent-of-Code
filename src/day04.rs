@@ -6,9 +6,12 @@ pub fn run() {
     let numbers = get_numbers(&contents);
     let boards = get_boards(&contents);
     let game = Game::new(numbers, boards);
-    let (_winner, score) = game.predict_winner();
 
+    let (_winner, score) = game.predict_winner();
     println!("part1: {:?}", score);
+
+    let (_loser, score) = game.predict_loser();
+    println!("part2: {:?}", score);
 }
 
 fn get_numbers(lines: &[String]) -> Vec<u32> {
@@ -44,7 +47,8 @@ struct Game {
     drawn: Vec<u32>,
     numbers: Vec<u32>,
     boards: Vec<Vec<Vec<u32>>>,
-    winner: Option<usize>,
+    latest_winner: Option<usize>,
+    winners: Vec<usize>,
     score: u32,
 }
 
@@ -54,7 +58,8 @@ impl Game {
             drawn: vec![],
             numbers,
             boards,
-            winner: None,
+            latest_winner: None,
+            winners: vec![],
             score: 0,
         }
     }
@@ -65,16 +70,27 @@ impl Game {
         let mut drawn = self.drawn.clone();
         drawn.push(called);
 
-        let winner = get_winner(&drawn, &self.boards);
-        let mut score = 0u32;
-        if let Some(w) = winner {
-            score = calculate_score(called, &drawn, &self.boards[w]);
+        let mut latest_winner = self.latest_winner;
+        let winners = get_winners(&drawn, &self.boards);
+        let score;
+        if self.winners != winners {
+            let new_winner = *winners
+                .iter()
+                .filter(|winner| !self.winners.contains(winner))
+                .collect::<Vec<&usize>>()
+                .pop()
+                .unwrap();
+            latest_winner = Some(new_winner);
+            score = calculate_score(called, &drawn, &self.boards[new_winner]);
+        } else {
+            score = self.score
         }
 
         Self {
             drawn,
             numbers,
-            winner,
+            latest_winner,
+            winners,
             score,
             ..self
         }
@@ -82,21 +98,33 @@ impl Game {
 
     fn predict_winner(&self) -> (Option<usize>, u32) {
         let mut hypothetical = self.clone().draw();
-        while hypothetical.winner == None || hypothetical.numbers.is_empty() {
+        while hypothetical.winners.is_empty() || hypothetical.numbers.is_empty() {
             hypothetical = hypothetical.draw();
         }
-        (hypothetical.winner, hypothetical.score)
+        (hypothetical.latest_winner, hypothetical.score)
+    }
+
+    fn predict_loser(&self) -> (Option<usize>, u32) {
+        let mut hypothetical = self.clone().draw();
+        while hypothetical.winners.len() < hypothetical.boards.len()
+            || hypothetical.numbers.is_empty()
+        {
+            hypothetical = hypothetical.draw();
+        }
+        (hypothetical.latest_winner, hypothetical.score)
     }
 }
 
-fn get_winner(drawn: &[u32], boards: &[Vec<Vec<u32>>]) -> Option<usize> {
+fn get_winners(drawn: &[u32], boards: &[Vec<Vec<u32>>]) -> Vec<usize> {
+    let mut result = vec![];
+
     for (i, board) in boards.iter().enumerate() {
         if winning_row(drawn, board) || winning_column(drawn, board) {
-            return Some(i);
+            result.push(i);
         }
     }
 
-    None
+    result
 }
 
 fn winning_row(drawn: &[u32], board: &[Vec<u32>]) -> bool {
@@ -202,55 +230,55 @@ mod tests {
         // first 5
 
         game = game.draw(); // 7
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 4
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 9
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 5
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 11
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         // next 6
 
         game = game.draw(); // 17
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 23
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 2
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 0
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 14
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         game = game.draw(); // 21
-        assert_eq!(game.winner, None);
+        assert!(game.winners.is_empty());
         assert_eq!(game.score, 0);
 
         // final draw
 
         game = game.draw(); // 24
-        assert_eq!(game.winner, Some(2));
+        assert_eq!(game.winners, vec![2]);
         assert_eq!(game.score, 4512);
     }
 
@@ -260,8 +288,19 @@ mod tests {
         let numbers = get_numbers(&lines);
         let boards = get_boards(&lines);
 
-        let mut game = Game::new(numbers, boards);
+        let game = Game::new(numbers, boards);
 
         assert_eq!(game.predict_winner(), (Some(2), 4512));
+    }
+
+    #[test]
+    fn predicting_the_loser() {
+        let lines = INPUT.map(|s| s.to_string());
+        let numbers = get_numbers(&lines);
+        let boards = get_boards(&lines);
+
+        let game = Game::new(numbers, boards);
+
+        assert_eq!(game.predict_loser(), (Some(1), 1924));
     }
 }
