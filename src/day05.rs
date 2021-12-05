@@ -14,6 +14,8 @@ pub fn run() {
     println!("part2: {:?}", part2);
 }
 
+type Coordinates = HashMap<(u32, u32), i32>;
+
 fn parse(lines: &[String]) -> Vec<((u32, u32), (u32, u32))> {
     lines
         .iter()
@@ -40,18 +42,10 @@ fn h_v_overlaps(lines: &[String]) -> usize {
 
     coordinates.iter().for_each(|((x1, y1), (x2, y2))| {
         if x1 == x2 {
-            let range = if y1 < y2 { *y1..=*y2 } else { *y2..=*y1 };
-            for y in range {
-                let entry = all_coordinates.entry((*x1, y)).or_insert(0);
-                *entry += 1;
-            }
+            add_h_lines(&mut all_coordinates, *x1, *y1, *y2)
         }
         if y1 == y2 {
-            let range = if x1 < x2 { *x1..=*x2 } else { *x2..=*x1 };
-            for x in range {
-                let entry = all_coordinates.entry((x, *y1)).or_insert(0);
-                *entry += 1;
-            }
+            add_v_lines(&mut all_coordinates, *x1, *x2, *y1)
         }
     });
 
@@ -64,38 +58,52 @@ fn h_v_d_overlaps(lines: &[String]) -> usize {
 
     coordinates.iter().for_each(|((x1, y1), (x2, y2))| {
         if x1 == x2 {
-            for y in if y1 < y2 { *y1..=*y2 } else { *y2..=*y1 } {
-                let entry = all_coordinates.entry((*x1, y)).or_insert(0);
-                *entry += 1;
-            }
+            add_h_lines(&mut all_coordinates, *x1, *y1, *y2)
         } else if y1 == y2 {
-            for x in if x1 < x2 { *x1..=*x2 } else { *x2..=*x1 } {
-                let entry = all_coordinates.entry((x, *y1)).or_insert(0);
-                *entry += 1;
-            }
+            add_v_lines(&mut all_coordinates, *x1, *x2, *y1)
         } else {
-            let xrange: Box<dyn Iterator<Item = _>> = if x1 < x2 {
-                Box::new(*x1..=*x2)
-            } else {
-                Box::new((*x2..=*x1).rev())
-            };
-            let yrange: Box<dyn Iterator<Item = _>> = if y1 < y2 {
-                Box::new(*y1..=*y2)
-            } else {
-                Box::new((*y2..=*y1).rev())
-            };
-            let range = xrange.zip(yrange);
-            for (x, y) in range {
-                let entry = all_coordinates.entry((x, y)).or_insert(0);
-                *entry += 1;
-            }
+            add_d_lines(&mut all_coordinates, *x1, *x2, *y1, *y2)
         }
     });
 
     all_coordinates.into_iter().filter(|e| e.1 > 1).count()
 }
 
-fn print_grid(coordinates: &HashMap<(u32, u32), i32>, width: usize, height: usize) {
+fn add_h_lines(coordinates: &mut Coordinates, x: u32, y1: u32, y2: u32) {
+    let range = if y1 < y2 { y1..=y2 } else { y2..=y1 };
+    for y in range {
+        let entry = coordinates.entry((x, y)).or_insert(0);
+        *entry += 1;
+    }
+}
+
+fn add_v_lines(coordinates: &mut Coordinates, x1: u32, x2: u32, y: u32) {
+    let range = if x1 < x2 { x1..=x2 } else { x2..=x1 };
+    for x in range {
+        let entry = coordinates.entry((x, y)).or_insert(0);
+        *entry += 1;
+    }
+}
+
+fn add_d_lines(coordinates: &mut Coordinates, x1: u32, x2: u32, y1: u32, y2: u32) {
+    let xrange: Box<dyn Iterator<Item = _>> = if x1 < x2 {
+        Box::new(x1..=x2)
+    } else {
+        Box::new((x2..=x1).rev())
+    };
+    let yrange: Box<dyn Iterator<Item = _>> = if y1 < y2 {
+        Box::new(y1..=y2)
+    } else {
+        Box::new((y2..=y1).rev())
+    };
+    let range = xrange.zip(yrange);
+    for (x, y) in range {
+        let entry = coordinates.entry((x, y)).or_insert(0);
+        *entry += 1;
+    }
+}
+
+fn print_grid(coordinates: &Coordinates, width: usize, height: usize) {
     for row in 0..height {
         for column in 0..width {
             let c = match *coordinates.get(&(column as u32, row as u32)).unwrap_or(&0) {
