@@ -72,16 +72,14 @@ fn h_v_d_overlaps(lines: &[String]) -> usize {
 fn add_h_lines(coordinates: &mut Coordinates, x: u32, y1: u32, y2: u32) {
     let range = if y1 < y2 { y1..=y2 } else { y2..=y1 };
     for y in range {
-        let entry = coordinates.entry((x, y)).or_insert(0);
-        *entry += 1;
+        add_coordinate(coordinates, (x, y))
     }
 }
 
 fn add_v_lines(coordinates: &mut Coordinates, x1: u32, x2: u32, y: u32) {
     let range = if x1 < x2 { x1..=x2 } else { x2..=x1 };
     for x in range {
-        let entry = coordinates.entry((x, y)).or_insert(0);
-        *entry += 1;
+        add_coordinate(coordinates, (x, y))
     }
 }
 
@@ -98,9 +96,13 @@ fn add_d_lines(coordinates: &mut Coordinates, x1: u32, x2: u32, y1: u32, y2: u32
     };
     let range = xrange.zip(yrange);
     for (x, y) in range {
-        let entry = coordinates.entry((x, y)).or_insert(0);
-        *entry += 1;
+        add_coordinate(coordinates, (x, y))
     }
+}
+
+fn add_coordinate(coordinates: &mut Coordinates, coordinate: (u32, u32)) {
+    let entry = coordinates.entry(coordinate).or_insert(0);
+    *entry += 1;
 }
 
 fn print_grid(coordinates: &Coordinates, width: usize, height: usize) {
