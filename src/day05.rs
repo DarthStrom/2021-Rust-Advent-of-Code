@@ -108,11 +108,11 @@ fn add_coordinate(coordinates: &mut Coordinates, coordinate: (u32, u32)) {
 fn print_grid(coordinates: &Coordinates, width: usize, height: usize) {
     for row in 0..height {
         for column in 0..width {
-            let c = match *coordinates.get(&(column as u32, row as u32)).unwrap_or(&0) {
-                0 => '.',
-                n => char::from_digit(n as u32, 10).unwrap(),
-            };
-            print!("{}", c);
+            if let Some(n) = coordinates.get(&(column as u32, row as u32)) {
+                print!("{}", n);
+            } else {
+                print!(".")
+            }
         }
         println!();
     }
