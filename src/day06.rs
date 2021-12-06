@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::input;
 
 pub fn run() {
@@ -5,43 +7,55 @@ pub fn run() {
 
     let day1 = advance_days(&parse(&contents), 80);
 
-    println!("part1: {:?}", day1.len());
+    println!("part1: {:?}", total(&day1));
+
+    let day2 = advance_days(&parse(&contents), 256);
+
+    println!("part2: {:?}", total(&day2));
 }
 
-fn parse(input: &str) -> Vec<u32> {
+fn parse(input: &str) -> HashMap<u32, usize> {
     input
         .trim()
         .split(',')
         .map(|c| c.parse::<u32>().unwrap())
-        .collect::<Vec<_>>()
-}
-
-fn advance_day(current: &[u32]) -> Vec<u32> {
-    let mut spawn: Vec<u32> = vec![];
-    let mut new = current
-        .iter()
-        .map(|l| {
-            if l == &0 {
-                spawn.push(8);
-                6
-            } else {
-                l - 1
-            }
+        .fold(HashMap::new(), |acc, f| {
+            let mut new = acc;
+            let entry = new.entry(f).or_default();
+            *entry += 1;
+            new
         })
-        .collect::<Vec<_>>();
-    new.append(&mut spawn);
-
-    new
 }
 
-fn advance_days(current: &[u32], days: u32) -> Vec<u32> {
-    let mut result: Vec<u32> = current.to_vec();
+fn advance_day(current: &HashMap<u32, usize>) -> HashMap<u32, usize> {
+    let mut ages: HashMap<u32, usize> = HashMap::new();
+
+    for (&age, &count) in current {
+        if age == 0 {
+            let entry = ages.entry(6).or_default();
+            *entry += count;
+            ages.insert(8, count);
+        } else {
+            let entry = ages.entry(age - 1).or_default();
+            *entry += count;
+        }
+    }
+
+    ages
+}
+
+fn advance_days(current: &HashMap<u32, usize>, days: u32) -> HashMap<u32, usize> {
+    let mut result: HashMap<u32, usize> = current.to_owned();
     let mut days_left = days;
     while days_left > 0 {
         result = advance_day(&result);
         days_left -= 1;
     }
     result
+}
+
+fn total(ages: &HashMap<u32, usize>) -> usize {
+    ages.iter().map(|(_, count)| count).sum()
 }
 
 #[cfg(test)]
@@ -52,9 +66,9 @@ mod tests {
 
     #[test]
     fn parsing() {
-        let numbers = parse(INPUT);
+        let ages = parse(INPUT);
 
-        assert_eq!(numbers, vec![3, 4, 3, 1, 2]);
+        assert_eq!(ages, HashMap::from([(1, 1), (2, 1), (3, 2), (4, 1)]));
     }
 
     #[test]
@@ -63,18 +77,24 @@ mod tests {
 
         let day1 = advance_day(&initial);
 
-        assert_eq!(day1, vec![2, 3, 2, 0, 1]);
+        assert_eq!(day1, HashMap::from([(0, 1), (1, 1), (2, 2), (3, 1)]));
 
         let day2 = advance_day(&day1);
 
-        assert_eq!(day2, vec![1, 2, 1, 6, 0, 8]);
+        assert_eq!(
+            day2,
+            HashMap::from([(0, 1), (1, 2), (2, 1), (6, 1), (8, 1)])
+        );
     }
 
     #[test]
     fn test_multiple_days() {
         let initial = parse(INPUT);
 
-        assert_eq!(advance_days(&initial, 2), vec![1, 2, 1, 6, 0, 8]);
+        assert_eq!(
+            advance_days(&initial, 2),
+            HashMap::from([(0, 1), (1, 2), (2, 1), (6, 1), (8, 1)])
+        );
     }
 
     #[test]
@@ -85,12 +105,27 @@ mod tests {
 
         assert_eq!(
             day18,
-            vec![6, 0, 6, 4, 5, 6, 0, 1, 1, 2, 6, 0, 1, 1, 1, 2, 2, 3, 3, 4, 6, 7, 8, 8, 8, 8]
+            HashMap::from([
+                (0, 3),
+                (1, 5),
+                (2, 3),
+                (3, 2),
+                (4, 2),
+                (5, 1),
+                (6, 5),
+                (7, 1),
+                (8, 4),
+            ])
         );
-        assert_eq!(day18.len(), 26);
+        assert_eq!(total(&day18), 26);
 
         let day80 = advance_days(&initial, 80);
 
-        assert_eq!(day80.len(), 5934);
+        assert_eq!(total(&day80), 5934);
+    }
+
+    #[test]
+    fn example2() {
+        assert_eq!(total(&advance_days(&parse(INPUT), 256)), 26984457539);
     }
 }
