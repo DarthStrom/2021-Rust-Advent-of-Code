@@ -27,7 +27,10 @@ fn cost(positions: &[i32], destination: i32) -> i32 {
 fn cost_corrected(positions: &[i32], destination: i32) -> i32 {
     positions
         .iter()
-        .map(|x| (1..=(destination - x).abs()).sum::<i32>())
+        .map(|x| {
+            let n = (destination - x).abs();
+            n * (n + 1) / 2
+        })
         .sum()
 }
 
