@@ -27,36 +27,32 @@ fn count_unique_in_line(line: &str) -> usize {
         .count()
 }
 
+fn get_unique_length_digit(legend: &[&str], length: usize) -> String {
+    legend
+        .iter()
+        .find(|s| s.len() == length)
+        .map(|s| s.chars().sorted().collect::<String>())
+        .unwrap()
+}
+
+fn get_digits_of_length(legend: &[&str], length: usize) -> Vec<String> {
+    legend
+        .iter()
+        .filter(|s| s.len() == length)
+        .map(|s| s.chars().sorted().collect::<String>())
+        .collect()
+}
+
 fn all_digits(line: &str) -> HashMap<String, u32> {
     let sides = split_input(line);
     let legend = sides[0].split(' ').collect::<Vec<_>>();
 
-    let one = legend
-        .iter()
-        .find(|s| s.len() == 2)
-        .map(|s| s.chars().sorted().collect::<String>())
-        .unwrap();
-    let four = legend
-        .iter()
-        .find(|s| s.len() == 4)
-        .map(|s| s.chars().sorted().collect::<String>())
-        .unwrap();
-    let seven = legend
-        .iter()
-        .find(|s| s.len() == 3)
-        .map(|s| s.chars().sorted().collect::<String>())
-        .unwrap();
-    let eight = legend
-        .iter()
-        .find(|s| s.len() == 7)
-        .map(|s| s.chars().sorted().collect::<String>())
-        .unwrap();
+    let one = get_unique_length_digit(&legend, 2);
+    let four = get_unique_length_digit(&legend, 4);
+    let seven = get_unique_length_digit(&legend, 3);
+    let eight = get_unique_length_digit(&legend, 7);
 
-    let mut six_lengths = legend
-        .iter()
-        .filter(|s| s.len() == 6)
-        .map(|s| s.chars().sorted().collect::<String>())
-        .collect::<Vec<_>>();
+    let mut six_lengths = get_digits_of_length(&legend, 6);
     let nine_index = six_lengths
         .iter()
         .position(|s| four.chars().all(|c| s.contains(c)))
@@ -69,11 +65,7 @@ fn all_digits(line: &str) -> HashMap<String, u32> {
     let zero = six_lengths.swap_remove(zero_index);
     let six = six_lengths.remove(0);
 
-    let mut five_lengths = legend
-        .iter()
-        .filter(|s| s.len() == 5)
-        .map(|s| s.chars().sorted().collect::<String>())
-        .collect::<Vec<_>>();
+    let mut five_lengths = get_digits_of_length(&legend, 5);
     let three_index = five_lengths
         .iter()
         .position(|s| one.chars().all(|c| s.contains(c)))
