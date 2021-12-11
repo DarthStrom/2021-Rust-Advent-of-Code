@@ -8,6 +8,7 @@ mod day07;
 mod day08;
 mod day09;
 mod day10;
+mod day11;
 mod input;
 
 fn main() {
@@ -28,6 +29,7 @@ fn main() {
             8 => day08::run(),
             9 => day09::run(),
             10 => day10::run(),
+            11 => day11::run(),
             _ => println!("unimplemented day"),
         }
     } else {
