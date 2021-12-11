@@ -8,26 +8,41 @@ pub fn run() {
     let part1 = flashes(&lines, 100);
 
     println!("part1: {:?}", part1);
+
+    let part2 = first_simultaneous(&lines);
+
+    println!("part2: {:?}", part2);
 }
 
 fn flashes(lines: &[String], steps: u32) -> u32 {
     let mut result = 0;
-    let mut cavern = lines
-        .iter()
-        .map(|l| l.chars().map(|c| c.to_digit(10).unwrap()).collect_vec())
-        .collect_vec();
+    let mut cavern = get_cavern(lines);
     for _step in 1..=steps {
         let flashes = perform_step(&mut cavern);
         result += flashes;
-
-        for row in cavern.iter() {
-            for octopus in row {
-                print!("{:?}", octopus);
-            }
-            println!();
-        }
     }
     result
+}
+
+fn first_simultaneous(lines: &[String]) -> u32 {
+    let mut cavern = get_cavern(lines);
+    let mut step = 0;
+    while !simultaneous(&cavern) {
+        let _ = perform_step(&mut cavern);
+        step += 1;
+    }
+    step
+}
+
+fn simultaneous(cavern: &[Vec<u32>]) -> bool {
+    cavern.iter().all(|row| row.iter().all(|&o| o == 0))
+}
+
+fn get_cavern(lines: &[String]) -> Vec<Vec<u32>> {
+    lines
+        .iter()
+        .map(|l| l.chars().map(|c| c.to_digit(10).unwrap()).collect_vec())
+        .collect_vec()
 }
 
 fn perform_step(cavern: &mut Vec<Vec<u32>>) -> u32 {
@@ -70,52 +85,43 @@ fn flash(
     flashed.push((x, y));
 
     if x > 0 && y < cavern.len() - 1 {
-        cavern[y + 1][x - 1] += 1;
-        if cavern[y + 1][x - 1] > 9 {
-            flashes = flash(cavern, flashed, x - 1, y + 1, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x - 1, y + 1, flashes)
     }
     if x > 0 {
-        cavern[y][x - 1] += 1;
-        if cavern[y][x - 1] > 9 {
-            flashes = flash(cavern, flashed, x - 1, y, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x - 1, y, flashes)
     }
     if x > 0 && y > 0 {
-        cavern[y - 1][x - 1] += 1;
-        if cavern[y - 1][x - 1] > 9 {
-            flashes = flash(cavern, flashed, x - 1, y - 1, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x - 1, y - 1, flashes)
     }
     if y > 0 {
-        cavern[y - 1][x] += 1;
-        if cavern[y - 1][x] > 9 {
-            flashes = flash(cavern, flashed, x, y - 1, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x, y - 1, flashes)
     }
     if x < cavern[y].len() - 1 && y > 0 {
-        cavern[y - 1][x + 1] += 1;
-        if cavern[y - 1][x + 1] > 9 {
-            flashes = flash(cavern, flashed, x + 1, y - 1, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x + 1, y - 1, flashes)
     }
     if x < cavern[y].len() - 1 {
-        cavern[y][x + 1] += 1;
-        if cavern[y][x + 1] > 9 {
-            flashes = flash(cavern, flashed, x + 1, y, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x + 1, y, flashes)
     }
     if x < cavern[y].len() - 1 && y < cavern.len() - 1 {
-        cavern[y + 1][x + 1] += 1;
-        if cavern[y + 1][x + 1] > 9 {
-            flashes = flash(cavern, flashed, x + 1, y + 1, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x + 1, y + 1, flashes)
     }
     if y < cavern.len() - 1 {
-        cavern[y + 1][x] += 1;
-        if cavern[y + 1][x] > 9 {
-            flashes = flash(cavern, flashed, x, y + 1, flashes);
-        }
+        flashes = flash_neighbor(cavern, flashed, x, y + 1, flashes)
+    }
+
+    flashes
+}
+
+fn flash_neighbor(
+    cavern: &mut [Vec<u32>],
+    flashed: &mut Vec<(usize, usize)>,
+    x: usize,
+    y: usize,
+    flashes: u32,
+) -> u32 {
+    cavern[y][x] += 1;
+    if cavern[y][x] > 9 {
+        return flash(cavern, flashed, x, y, flashes);
     }
     flashes
 }
@@ -155,5 +161,12 @@ mod tests {
         assert_eq!(flashes(&lines, 2), 35);
         assert_eq!(flashes(&lines, 10), 204);
         assert_eq!(flashes(&lines, 100), 1656);
+    }
+
+    #[test]
+    fn simultaneous_flashing() {
+        let lines = INPUT.map(|s| s.to_string());
+
+        assert_eq!(first_simultaneous(&lines), 195);
     }
 }
