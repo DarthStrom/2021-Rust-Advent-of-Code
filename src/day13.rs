@@ -10,100 +10,127 @@ pub fn run() {
     let part1 = fold(&input, 1);
 
     println!("part1: {:?}", part1);
+
+    let part2 = fold_all(&input);
+
+    for line in part2 {
+        println!("{}", line);
+    }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 enum Instruction {
     Left(usize),
     Up(usize),
 }
 
-fn fold(input: &[String], steps: usize) -> usize {
-    let mut coordinates: HashSet<(usize, usize)> = input
-        .iter()
-        .take_while(|s| !s.is_empty())
-        .map(|s| {
-            let mut split = s.split(',');
-            let x = split.next().unwrap().parse::<usize>().unwrap();
-            let y = split.next().unwrap().parse::<usize>().unwrap();
-            (x, y)
-        })
-        .collect();
+fn fold_all(input: &[String]) -> Vec<String> {
+    let (mut coordinates, instructions) = parse_input(input);
 
-    let instructions = input
-        .iter()
-        .skip_while(|s| !s.is_empty())
-        .skip(1)
-        .map(|s| {
-            let mut split = s.split('=');
-            match split.next() {
-                Some("fold along y") => Instruction::Up(split.next().unwrap().parse().unwrap()),
-                Some("fold along x") => Instruction::Left(split.next().unwrap().parse().unwrap()),
-                _ => panic!("unknown instruction"),
-            }
-        })
-        .collect_vec();
-
-    let mut result = HashSet::<(usize, usize)>::new();
-
-    for step in 1..=steps {
-        result = HashSet::<(usize, usize)>::new();
-
-        match instructions[step - 1] {
-            Instruction::Up(line) => {
-                coordinates
-                    .iter()
-                    .filter(|(_x, y)| y > &line)
-                    .for_each(|(x, y)| {
-                        result.insert((*x, line - (y - line)));
-                    });
-                coordinates
-                    .iter()
-                    .filter(|(_x, y)| y < &line)
-                    .for_each(|c| {
-                        result.insert(*c);
-                    });
-                coordinates = result.clone();
-            }
-            Instruction::Left(line) => {
-                coordinates
-                    .iter()
-                    .filter(|(x, _y)| x > &line)
-                    .for_each(|(x, y)| {
-                        result.insert((line - (x - line), *y));
-                    });
-                coordinates
-                    .iter()
-                    .filter(|(x, _y)| x < &line)
-                    .for_each(|c| {
-                        result.insert(*c);
-                    });
-                coordinates = result.clone();
-            }
-        }
+    for instruction in instructions {
+        coordinates = do_instruction(instruction, &coordinates);
     }
 
-    result.len()
+    get_grid(&coordinates)
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|val| match val {
+                    true => '#',
+                    false => '.',
+                })
+                .collect::<String>()
+        })
+        .collect_vec()
 }
 
-#[allow(dead_code)]
-fn print_grid(coordinates: &HashSet<(usize, usize)>) {
+fn fold(input: &[String], steps: usize) -> usize {
+    let (mut coordinates, instructions) = parse_input(input);
+
+    for step in 1..=steps {
+        coordinates = do_instruction(instructions[step - 1], &coordinates);
+    }
+
+    coordinates.len()
+}
+
+fn parse_input(input: &[String]) -> (HashSet<(usize, usize)>, Vec<Instruction>) {
+    (
+        input
+            .iter()
+            .take_while(|s| !s.is_empty())
+            .map(|s| {
+                let mut split = s.split(',');
+                let x = split.next().unwrap().parse::<usize>().unwrap();
+                let y = split.next().unwrap().parse::<usize>().unwrap();
+                (x, y)
+            })
+            .collect(),
+        input
+            .iter()
+            .skip_while(|s| !s.is_empty())
+            .skip(1)
+            .map(|s| {
+                let mut split = s.split('=');
+                match split.next() {
+                    Some("fold along y") => Instruction::Up(split.next().unwrap().parse().unwrap()),
+                    Some("fold along x") => {
+                        Instruction::Left(split.next().unwrap().parse().unwrap())
+                    }
+                    _ => panic!("unknown instruction"),
+                }
+            })
+            .collect_vec(),
+    )
+}
+
+fn do_instruction(
+    instruction: Instruction,
+    coordinates: &HashSet<(usize, usize)>,
+) -> HashSet<(usize, usize)> {
+    let mut result = HashSet::<(usize, usize)>::new();
+    match instruction {
+        Instruction::Up(line) => {
+            coordinates
+                .iter()
+                .filter(|(_x, y)| y > &line)
+                .for_each(|(x, y)| {
+                    result.insert((*x, line - (y - line)));
+                });
+            coordinates
+                .iter()
+                .filter(|(_x, y)| y < &line)
+                .for_each(|c| {
+                    result.insert(*c);
+                });
+            result
+        }
+        Instruction::Left(line) => {
+            coordinates
+                .iter()
+                .filter(|(x, _y)| x > &line)
+                .for_each(|(x, y)| {
+                    result.insert((line - (x - line), *y));
+                });
+            coordinates
+                .iter()
+                .filter(|(x, _y)| x < &line)
+                .for_each(|c| {
+                    result.insert(*c);
+                });
+            result
+        }
+    }
+}
+
+fn get_grid(coordinates: &HashSet<(usize, usize)>) -> Vec<Vec<bool>> {
     let max_x = coordinates.iter().max_by(|a, b| a.0.cmp(&b.0)).unwrap().0;
     let max_y = coordinates.iter().max_by(|a, b| a.1.cmp(&b.1)).unwrap().1;
     let mut grid: Vec<Vec<bool>> = vec![vec![false; max_x + 1]; max_y + 1];
-    println!("{}, {}", max_x, max_y);
     for &(x, y) in coordinates {
         grid[y][x] = true
     }
-    for y in grid {
-        for x in y {
-            match x {
-                true => print!("#"),
-                false => print!("."),
-            }
-        }
-        println!();
-    }
+    grid
 }
 
 #[cfg(test)]
@@ -140,5 +167,21 @@ mod tests {
 
         assert_eq!(fold(&input, 1), 17);
         assert_eq!(fold(&input, 2), 16);
+    }
+
+    #[test]
+    fn finish_folding() {
+        let input = INPUT.map(|s| s.to_string());
+
+        assert_eq!(
+            fold_all(&input),
+            vec![
+                "#####".to_string(),
+                "#...#".to_string(),
+                "#...#".to_string(),
+                "#...#".to_string(),
+                "#####".to_string(),
+            ]
+        );
     }
 }
