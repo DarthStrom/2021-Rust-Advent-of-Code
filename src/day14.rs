@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use itertools::Itertools;
+use itertools::{Itertools, MinMaxResult};
 
 use crate::input;
 
@@ -10,43 +10,55 @@ pub fn run() {
     let part1 = apply_pair_insertion(&input, 10);
 
     println!("part1: {:?}", part1);
+
+    let part2 = apply_pair_insertion(&input, 40);
+
+    println!("part2: {:?}", part2);
 }
 
 fn apply_pair_insertion(instructions: &[String], steps: usize) -> usize {
+    let mut counts = HashMap::<char, usize>::new();
     let mut polymer = get_template(instructions);
     let rules = get_rules(instructions);
 
     for _step in 1..=steps {
-        let last = polymer.chars().last().unwrap();
-        polymer = polymer
-            .chars()
-            .tuple_windows()
-            .map(|(a, b)| {
-                let new = rules.get(&format!("{}{}", a, b)).unwrap();
-                format!("{}{}", a, new)
-            })
-            .join("");
-        polymer.push(last);
-        println!("{}", polymer);
+        let mut new_polymer = HashMap::new();
+        for ((c1, c2), count) in polymer {
+            if let Some(&mid) = rules.get(&(c1, c2)) {
+                *new_polymer.entry((c1, mid)).or_default() += count;
+                *new_polymer.entry((mid, c2)).or_default() += count;
+            } else {
+                *new_polymer.entry((c1, c2)).or_default() += count;
+            }
+        }
+        polymer = new_polymer;
     }
 
-    let mut counts = HashMap::<char, usize>::new();
+    for ((c1, c2), count) in polymer {
+        *counts.entry(c1).or_default() += count;
+        *counts.entry(c2).or_default() += count;
+    }
 
-    polymer.chars().for_each(|c| {
-        let mut entry = counts.entry(c).or_default();
-        *entry += 1;
-    });
+    counts.remove(&'x');
 
-    let max = counts.iter().max_by(|a, b| a.1.cmp(b.1)).unwrap().1;
-    let min = counts.iter().min_by(|a, b| a.1.cmp(b.1)).unwrap().1;
-    max - min
+    if let MinMaxResult::MinMax(min, max) = counts.values().minmax() {
+        // divide by 2 since each char shows up twice per appearance
+        // e.g. ABC will result in [xA, AB, BC, Cx]
+        (*max - *min) / 2
+    } else {
+        0
+    }
 }
 
-fn get_template(instructions: &[String]) -> String {
-    instructions[0].to_string()
+fn get_template(instructions: &[String]) -> HashMap<(char, char), usize> {
+    // add buffer so that end chars show up twice like the middle ones
+    format!("x{}x", instructions[0])
+        .chars()
+        .tuple_windows()
+        .counts()
 }
 
-fn get_rules(instructions: &[String]) -> HashMap<String, String> {
+fn get_rules(instructions: &[String]) -> HashMap<(char, char), char> {
     let mut result = HashMap::new();
     instructions
         .iter()
@@ -54,9 +66,10 @@ fn get_rules(instructions: &[String]) -> HashMap<String, String> {
         .skip(1)
         .for_each(|l| {
             let mut split = l.split(" -> ");
+            let mut chars = split.next().unwrap().chars();
             result.insert(
-                split.next().unwrap().to_string(),
-                split.next().unwrap().to_string(),
+                (chars.next().unwrap(), chars.next().unwrap()),
+                split.next().unwrap().chars().next().unwrap(),
             );
         });
     result
@@ -73,9 +86,16 @@ mod tests {
     ];
 
     #[test]
-    fn example() {
+    fn example1() {
         let instructions = INPUT.map(|s| s.to_string());
 
-        assert_eq!(apply_pair_insertion(&instructions, 10), 1588)
+        assert_eq!(apply_pair_insertion(&instructions, 10), 1588);
+    }
+
+    #[test]
+    fn example2() {
+        let instructions = INPUT.map(|s| s.to_string());
+
+        assert_eq!(apply_pair_insertion(&instructions, 40), 2188189693529);
     }
 }
