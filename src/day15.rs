@@ -8,6 +8,10 @@ pub fn run() {
     let part1 = lowest_risk(&input);
 
     println!("part1: {:?}", part1);
+
+    let part2 = lowest_risk_full(&input);
+
+    println!("part2: {:?}", part2);
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -19,17 +23,61 @@ struct Node {
 
 fn lowest_risk(lines: &[String]) -> u32 {
     let all_nodes = get_nodes(lines);
-    let start = &all_nodes[0][0];
-    let goal = all_nodes.iter().last().unwrap().iter().last().unwrap();
+
+    solve(&all_nodes)
+}
+
+fn lowest_risk_full(lines: &[String]) -> u32 {
+    let first_nodes = get_nodes(lines);
+    let all_nodes = expound(&first_nodes);
+
+    solve(&all_nodes)
+}
+
+fn solve(nodes: &[Vec<Node>]) -> u32 {
+    let start = &nodes[0][0];
+    let goal = nodes.iter().last().unwrap().iter().last().unwrap();
 
     let result = dijkstra(
         &(start.x, start.y),
-        |point| successors(point, &all_nodes),
+        |point| successors(point, &nodes),
         |point| point == &(goal.x, goal.y),
     )
     .expect("no path");
 
     result.1
+}
+
+fn expound(original: &[Vec<Node>]) -> Vec<Vec<Node>> {
+    let original_width = original[0].len();
+    let original_height = original.len();
+    let mut result = vec![
+        vec![
+            Node {
+                x: 0,
+                y: 0,
+                risk: 0
+            };
+            original_width * 5
+        ];
+        original_height * 5
+    ];
+    for (original_y, row) in original.iter().enumerate() {
+        for (original_x, node) in row.iter().enumerate() {
+            for tile_y in 0..5 {
+                for tile_x in 0..5 {
+                    let x = original_x + tile_x * original_width;
+                    let y = original_y + tile_y * original_height;
+                    let mut risk = (node.risk + tile_x as u32 + tile_y as u32) % 9 + 9;
+                    if risk > 9 {
+                        risk -= 9
+                    }
+                    result[y][x] = Node { x, y, risk }
+                }
+            }
+        }
+    }
+    result
 }
 
 fn successors(point: &(usize, usize), nodes: &[Vec<Node>]) -> Vec<((usize, usize), u32)> {
@@ -99,5 +147,12 @@ mod tests {
         let lines = INPUT.map(|s| s.to_string());
 
         assert_eq!(lowest_risk(&lines), 40);
+    }
+
+    #[test]
+    fn example2() {
+        let lines = INPUT.map(|s| s.to_string());
+
+        assert_eq!(lowest_risk_full(&lines), 315);
     }
 }
