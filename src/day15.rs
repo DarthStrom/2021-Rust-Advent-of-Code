@@ -40,7 +40,7 @@ fn solve(nodes: &[Vec<Node>]) -> u32 {
 
     let result = dijkstra(
         &(start.x, start.y),
-        |point| successors(point, &nodes),
+        |point| successors(point, nodes),
         |point| point == &(goal.x, goal.y),
     )
     .expect("no path");
