@@ -1,3 +1,5 @@
+use core::panic;
+
 use hex::decode;
 use itertools::Itertools;
 
@@ -9,6 +11,10 @@ pub fn run() {
     let part1 = parse_input(&input).version_sum();
 
     println!("part1: {:?}", part1);
+
+    let part2 = parse_input(&input).value();
+
+    println!("part2: {:?}", part2);
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -17,9 +23,21 @@ struct Literal {
     value: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Operation {
+    Sum,
+    Product,
+    Min,
+    Max,
+    GreaterThan,
+    LessThan,
+    EqualTo,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Operator {
     version: u32,
+    operation: Operation,
     packets: Vec<Packet>,
 }
 
@@ -36,6 +54,39 @@ impl Packet {
             Packet::Operator(o) => {
                 o.version + o.packets.iter().map(|p| p.version_sum()).sum::<u32>()
             }
+        }
+    }
+
+    fn value(&self) -> usize {
+        match self {
+            Packet::Literal(l) => l.value,
+            Packet::Operator(o) => match o.operation {
+                Operation::Sum => o.packets.iter().map(|p| p.value()).sum(),
+                Operation::Product => o.packets.iter().map(|p| p.value()).product(),
+                Operation::Min => o.packets.iter().map(|p| p.value()).min().unwrap(),
+                Operation::Max => o.packets.iter().map(|p| p.value()).max().unwrap(),
+                Operation::GreaterThan => {
+                    if o.packets[0].value() > o.packets[1].value() {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                Operation::LessThan => {
+                    if o.packets[0].value() < o.packets[1].value() {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                Operation::EqualTo => {
+                    if o.packets[0].value() == o.packets[1].value() {
+                        1
+                    } else {
+                        0
+                    }
+                }
+            },
         }
     }
 }
@@ -83,6 +134,17 @@ fn parse_literal(chars: &[char]) -> (Packet, usize) {
 }
 
 fn parse_operator(chars: &[char]) -> (Packet, usize) {
+    let packet_type = chars.iter().skip(3).take(3).join("");
+    let operation = match packet_type.as_str() {
+        "000" => Operation::Sum,
+        "001" => Operation::Product,
+        "010" => Operation::Min,
+        "011" => Operation::Max,
+        "101" => Operation::GreaterThan,
+        "110" => Operation::LessThan,
+        "111" => Operation::EqualTo,
+        op_code => panic!("unrecognized operation {}", op_code),
+    };
     let version = u32::from_str_radix(&chars[..3].iter().join(""), 2).unwrap();
     let bits = chars.iter().skip(6).collect_vec();
     let mut total_length = 7;
@@ -112,7 +174,11 @@ fn parse_operator(chars: &[char]) -> (Packet, usize) {
     }
 
     (
-        Packet::Operator(Operator { version, packets }),
+        Packet::Operator(Operator {
+            version,
+            operation,
+            packets,
+        }),
         total_length,
     )
 }
@@ -142,6 +208,7 @@ mod tests {
             parse_input(input),
             Packet::Operator(Operator {
                 version: 1,
+                operation: Operation::LessThan,
                 packets: vec![
                     Packet::Literal(Literal {
                         version: 6,
@@ -164,6 +231,7 @@ mod tests {
             parse_input(input),
             Packet::Operator(Operator {
                 version: 7,
+                operation: Operation::Max,
                 packets: vec![
                     Packet::Literal(Literal {
                         version: 2,
@@ -188,10 +256,13 @@ mod tests {
 
         let expected = Packet::Operator(Operator {
             version: 4,
+            operation: Operation::Min,
             packets: vec![Packet::Operator(Operator {
                 version: 1,
+                operation: Operation::Min,
                 packets: vec![Packet::Operator(Operator {
                     version: 5,
+                    operation: Operation::Min,
                     packets: vec![Packet::Literal(Literal {
                         version: 6,
                         value: 15,
@@ -224,5 +295,61 @@ mod tests {
         let input = "A0016C880162017C3686B18A3D4780";
 
         assert_eq!(parse_input(input).version_sum(), 31)
+    }
+
+    #[test]
+    fn sum_packet() {
+        let input = "C200B40A82";
+
+        assert_eq!(parse_input(input).value(), 3);
+    }
+
+    #[test]
+    fn product_packet() {
+        let input = "04005AC33890";
+
+        assert_eq!(parse_input(input).value(), 54);
+    }
+
+    #[test]
+    fn min_packet() {
+        let input = "880086C3E88112";
+
+        assert_eq!(parse_input(input).value(), 7);
+    }
+
+    #[test]
+    fn max_packet() {
+        let input = "CE00C43D881120";
+
+        assert_eq!(parse_input(input).value(), 9);
+    }
+
+    #[test]
+    fn less_than_packet() {
+        let input = "D8005AC2A8F0";
+
+        assert_eq!(parse_input(input).value(), 1);
+    }
+
+    #[test]
+    fn greater_than_packet() {
+        let input = "F600BC2D8F";
+
+        assert_eq!(parse_input(input).value(), 0);
+    }
+
+    #[test]
+    fn equal_to_packet() {
+        let input = "9C005AC2F8F0";
+
+        assert_eq!(parse_input(input).value(), 0);
+    }
+
+    #[test]
+    fn compound_operation() {
+        let input = "9C0141080250320F1802104A08";
+
+        assert_eq!(parse_input(input).value(), 1);
     }
 }
