@@ -4,6 +4,10 @@ pub fn run() {
     let (_, part1) = high_shot(target);
 
     println!("part1: {:?}", part1);
+
+    let part2 = all_valid(target).len();
+
+    println!("part2: {:?}", part2);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -26,6 +30,18 @@ fn high_shot(target: (Point, Point)) -> (Point, i32) {
         }
     }
     (result, highest)
+}
+
+fn all_valid(target: (Point, Point)) -> Vec<Point> {
+    let mut result = vec![];
+    for x in 0..=200 {
+        for y in -200..200 {
+            if shoot(Point { x, y }, target).is_some() {
+                result.push(Point { x, y })
+            }
+        }
+    }
+    result
 }
 
 fn shoot(initial_velocity: Point, target: (Point, Point)) -> Option<(Point, i32)> {
@@ -82,5 +98,10 @@ mod tests {
     #[test]
     fn getting_the_high_shot() {
         assert_eq!(high_shot(TARGET), (Point { x: 6, y: 9 }, 45));
+    }
+
+    #[test]
+    fn example2() {
+        assert_eq!(all_valid(TARGET).len(), 112);
     }
 }
