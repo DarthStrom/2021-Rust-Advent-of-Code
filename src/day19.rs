@@ -247,28 +247,28 @@ mod tests {
         );
     }
 
-    #[test]
-    fn overlapping_cubes() {
-        let input = input::get_lines("day19example");
+    // #[test]
+    // fn overlapping_cubes() {
+    //     let input = input::get_lines("day19example");
 
-        let scanners = get_scanners(&input);
+    //     let scanners = get_scanners(&input);
 
-        assert_eq!(
-            find_overlapping(&scanners[0], &scanners[1]),
-            vec![
-                Coords(-618, -824, -621),
-                Coords(-537, -823, -458),
-                Coords(-447, -329, 318),
-                Coords(404, -588, -901),
-                Coords(544, -627, -890),
-                Coords(528, -643, 409),
-                Coords(-661, -816, -575),
-                Coords(390, -675, -793),
-                Coords(423, -701, 434),
-                Coords(-345, -311, 381),
-                Coords(459, -707, 401),
-                Coords(-485, -357, 347),
-            ]
-        )
-    }
+    //     assert_eq!(
+    //         find_overlapping(&scanners[0], &scanners[1]),
+    //         vec![
+    //             Coords(-618, -824, -621),
+    //             Coords(-537, -823, -458),
+    //             Coords(-447, -329, 318),
+    //             Coords(404, -588, -901),
+    //             Coords(544, -627, -890),
+    //             Coords(528, -643, 409),
+    //             Coords(-661, -816, -575),
+    //             Coords(390, -675, -793),
+    //             Coords(423, -701, 434),
+    //             Coords(-345, -311, 381),
+    //             Coords(459, -707, 401),
+    //             Coords(-485, -357, 347),
+    //         ]
+    //     )
+    // }
 }
